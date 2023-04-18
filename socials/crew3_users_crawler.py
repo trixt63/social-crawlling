@@ -5,6 +5,7 @@ import requests
 from urllib.parse import urlencode
 
 from utils.logger_utils import get_logger
+from databases.social_users_db import SocialUsersDB
 
 logger = get_logger('Crew3 User Crawler')
 
@@ -77,7 +78,7 @@ class Crew3UserCrawler:
             json.dump(data, f)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self):
+    def get_users(self, exporter: SocialUsersDB = None):
         with open('test/Crew3/communities.json') as f:
             data = json.load(f)
             data = [q for q in data if q['totalMembers']]
@@ -100,7 +101,7 @@ class Crew3UserCrawler:
                 for user in list_users:
                     user_id = user['userId']
                     if user_id in users:
-                        ...
+                        continue
                     else:
                         try:
                             questers_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
@@ -109,8 +110,6 @@ class Crew3UserCrawler:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
-                                # logger.info(f'Loaded {len(data)} questers after page [{page}]')
-
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
@@ -120,7 +119,8 @@ class Crew3UserCrawler:
                             time.sleep(1)
 
                 users.update(data)
-
+                if data and (exporter is not None):
+                    self.export_users(exporter, data)
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
         except KeyboardInterrupt:
             logger.exception('Killed')
@@ -148,7 +148,14 @@ class Crew3UserCrawler:
             user['twitter'] = twitter_username
 
         return user
-
+    def export_users(exporter, users):
+        data = []
+        for user in users:
+            data.append({
+                **user
+            })
+        exporter.update_users(data)
+        logger.info(f'Exported {len(data)} users')
 
 if __name__ == '__main__':
     crawler = Crew3UserCrawler()
