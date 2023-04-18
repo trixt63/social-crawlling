@@ -8,22 +8,23 @@ from utils.logger_utils import get_logger
 
 logger = get_logger('Crew3 User Crawler')
 
-BASE_URL = 'https://api.crew3.xyz/communities'
+BASE_URL = 'https://api.zealy.io/communities'
 
 headers = {
-    'Origin': 'https://crew3.xyz',
-    'Referer': 'https://crew3.xyz/',
-    'Cookie': '__cf_bm=kuPMYVZ1JfDYoNfHK_k6yG1soOEl1IJLxqmZIWgpoyU-1679891327-0-ASNiS3KCWlMLz0f/PKxsa1npngRv+bpQLOTZ48FlTRitJk/caJbB8S9Y4SIMNLtya8/eRYePbn+MP1BF5H/G2vQ=; connect.sid=s%3AH3B0BE8nL_bU-HVpPomw9xRN6iHhPK8E.FvXqX3oPd2GoJ%2FJ5lQQ%2FdoCX7BlETQ%2BZUSo3Ux0c0e4'
+    'Origin': 'https://zealy.io',
+    'Referer': 'https://zealy.io/',
+    # 'Cookie': '__cf_bm=kuPMYVZ1JfDYoNfHK_k6yG1soOEl1IJLxqmZIWgpoyU-1679891327-0-ASNiS3KCWlMLz0f/PKxsa1npngRv+bpQLOTZ48FlTRitJk/caJbB8S9Y4SIMNLtya8/eRYePbn+MP1BF5H/G2vQ=; connect.sid=s%3AH3B0BE8nL_bU-HVpPomw9xRN6iHhPK8E.FvXqX3oPd2GoJ%2FJ5lQQ%2FdoCX7BlETQ%2BZUSo3Ux0c0e4',
+    
 }
 
 
 class Crew3UserCrawler:
     @staticmethod
-    def _get_communities(page=1, count=100):
+    def _get_communities(page=1, count=30):
         query = {
             'limit': count,
             'page': page,
-            'category': 'all'
+            'category': 'popular'
         }
         url = f'{BASE_URL}?{urlencode(query)}'
         response = requests.get(url, headers=headers)
@@ -72,7 +73,7 @@ class Crew3UserCrawler:
 
         data = sorted(data, key=lambda x: x['totalMembers'], reverse=True)
 
-        with open('../../../../test/Crew3/communities.json', 'w') as f:
+        with open('test/Crew3/communities.json', 'w') as f:
             json.dump(data, f)
         logger.info(f'Saved {len(data)} communities')
 
@@ -108,6 +109,8 @@ class Crew3UserCrawler:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
+                                # logger.info(f'Loaded {len(data)} questers after page [{page}]')
+
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')

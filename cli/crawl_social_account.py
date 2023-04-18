@@ -2,6 +2,7 @@ import click
 
 from databases.social_users_db import SocialUsersDB
 from socials.questn_users_crawler import QuestNUserCrawler
+from socials.crew3_users_crawler import Crew3UserCrawler
 from utils.logger_utils import get_logger
 
 logger = get_logger('Crawl social account')
@@ -17,5 +18,6 @@ def crawl_social_account(output, batch_size, min_submissions, max_submissions):
 
     db = SocialUsersDB(output)
 
-    crawler = QuestNUserCrawler()
-    crawler.get_users(user_batch_size=batch_size, min_submissions=min_submissions, max_submissions=max_submissions, exporter=db)
+    crawler = Crew3UserCrawler()
+    crawler.get_users()
+    # crawler.get_users(user_batch_size=batch_size, min_submissions=min_submissions, max_submissions=max_submissions, exporter=db)
