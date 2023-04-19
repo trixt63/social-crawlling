@@ -119,8 +119,10 @@ class Crew3UserCrawler:
                             time.sleep(1)
 
                 users.update(data)
-                if data and (exporter is not None):
-                    self.export_users(exporter, data)
+                # exporter.update_users(data)
+                with open('data_{quest["name"]}.json', 'w') as f:
+                    json.dump(data, f)
+                logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
         except KeyboardInterrupt:
             logger.exception('Killed')
@@ -148,14 +150,14 @@ class Crew3UserCrawler:
             user['twitter'] = twitter_username
 
         return user
-    def export_users(exporter, users):
-        data = []
-        for user in users:
-            data.append({
-                **user
-            })
-        exporter.update_users(data)
-        logger.info(f'Exported {len(data)} users')
+    # def export_users(exporter, users):
+    #     data = []
+    #     for user in users:
+    #         data.append({
+    #             **user
+    #         })
+    #     exporter.update_users(data)
+    #     logger.info(f'Exported {len(data)} users')
 
 if __name__ == '__main__':
     crawler = Crew3UserCrawler()
