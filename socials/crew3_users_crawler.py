@@ -110,7 +110,8 @@ class Crew3UserCrawler:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
-                                    logger.info(f'Save user {user_id}')
+                                if idx == 200:
+                                    logger.info(f'Check user {idx} ')
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
