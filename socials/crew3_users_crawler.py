@@ -98,7 +98,9 @@ class Crew3UserCrawler:
                 logger.info(f'There are {len(list_users)} users to get info')
 
                 data = {}
+                t = 0
                 for user in list_users:
+                    
                     user_id = user['userId']
                     if user_id in users:
                         continue
@@ -109,17 +111,17 @@ class Crew3UserCrawler:
                                 questers_response = questers_resp.json()
                                 q_ = self.format_quester(questers_response)
                                 if q_:
-                                    data[user_id] = q_
-                                if idx == 200:
-                                    logger.info(f'Check user {idx} ')
+                                    data.update(q_)
+                                if t% 100==0:
+                                    logger.info(f'Check user {t} ')
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.0001)
-
+                            time.sleep(0.00001)
+                    t+=1
                 users.update(data)
                 # exporter.update_users(data)
                 with open('user_'+f'{idx}'+'.json', 'w') as f:
