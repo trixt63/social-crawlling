@@ -111,7 +111,7 @@ class Crew3UserCrawler:
                                 questers_response = questers_resp.json()
                                 q_ = self.format_quester(questers_response)
                                 if q_:
-                                    data.update(q_)
+                                    data[user_id] = q_
                                 if t% 500==0:
                                     logger.info(f'Check user {t} ')
                             else:
@@ -120,7 +120,7 @@ class Crew3UserCrawler:
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.0001)
+                            time.sleep(0.000001)
                     t+=1
                 users.update(data)
                 # exporter.update_users(data)
