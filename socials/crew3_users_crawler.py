@@ -120,7 +120,7 @@ class Crew3UserCrawler:
 
                 users.update(data)
                 # exporter.update_users(data)
-                with open('data_{quest["name"]}.json', 'w') as f:
+                with open('data_'+f'{idx}'+'.json', 'w') as f:
                     json.dump(data, f)
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
