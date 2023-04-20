@@ -110,18 +110,19 @@ class Crew3UserCrawler:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
+                                    logger.info(f'Save user {user_id}')
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(1)
+                            time.sleep(0.0001)
 
                 users.update(data)
                 # exporter.update_users(data)
-                with open('data_'+f'{idx}'+'.json', 'w') as f:
-                    json.dump(data, f)
+                with open('user_'+f'{idx}'+'.json', 'w') as f:
+                    json.dump(users, f)
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
         except KeyboardInterrupt:
