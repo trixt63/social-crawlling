@@ -78,7 +78,7 @@ class Crew3UserCrawler:
             json.dump(data, f)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self, exporter: SocialUsersDB = None):
+    def get_users(self, sleep,exporter: SocialUsersDB = None):
         with open('test/Crew3/communities.json') as f:
             data = json.load(f)
             data = [q for q in data if q['totalMembers']]
@@ -120,7 +120,7 @@ class Crew3UserCrawler:
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.05)
+                            time.sleep(0.0001)
                     t+=1
                 users.update(data)
                 # exporter.update_users(data)
