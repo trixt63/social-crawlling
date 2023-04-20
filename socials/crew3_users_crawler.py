@@ -120,7 +120,7 @@ class Crew3UserCrawler:
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.001)
+                            time.sleep(0.0001)
                     t+=1
                 users.update(data)
                 # exporter.update_users(data)
