@@ -98,7 +98,7 @@ class Crew3UserCrawler:
                 logger.info(f'There are {len(list_users)} users to get info')
 
                 data = {}
-                t = 0
+                t = int(file[5:8])
                 for user in list_users:
                     
                     user_id = user['userId']
