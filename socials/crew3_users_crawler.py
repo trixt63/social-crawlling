@@ -78,8 +78,8 @@ class Crew3UserCrawler:
             json.dump(data, f)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self, exporter: SocialUsersDB = None):
-        with open('test/Crew3/communities.json') as f:
+    def get_users(self, file ="communities.json",exporter: SocialUsersDB = None):
+        with open('test/Crew3/'+file) as f:
             data = json.load(f)
             data = [q for q in data if q['totalMembers']]
 
