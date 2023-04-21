@@ -89,6 +89,7 @@ class Crew3UserCrawler:
 
         users = {}
         try:
+            t = int(file[5:8])
             for idx, quest in enumerate(data):
                 logger.info(f'[{idx}] Get users of {quest["name"]}...')
                 subdomain = quest['subdomain']
@@ -98,7 +99,7 @@ class Crew3UserCrawler:
                 logger.info(f'There are {len(list_users)} users to get info')
 
                 data = {}
-                t = int(file[5:8])
+                
                 i = 0 
                 for user in list_users:
                     
@@ -122,7 +123,6 @@ class Crew3UserCrawler:
                             logger.exception(ex)
                         finally:
                             time.sleep(0.00001)
-                    t+=1
                     i+=1
                 users.update(data)
                 # exporter.update_users(data)
@@ -130,6 +130,7 @@ class Crew3UserCrawler:
                     json.dump(users, f)
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
+                t+=1
         except KeyboardInterrupt:
             logger.exception('Killed')
         finally:
