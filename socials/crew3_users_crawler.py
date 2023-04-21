@@ -89,7 +89,7 @@ class Crew3UserCrawler:
 
         users = {}
         try:
-            t = int(file[5:8])
+            t = int(file[5:9])
             for idx, quest in enumerate(data):
                 logger.info(f'[{idx}] Get users of {quest["name"]}...')
                 subdomain = quest['subdomain']
