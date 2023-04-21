@@ -99,6 +99,7 @@ class Crew3UserCrawler:
 
                 data = {}
                 t = int(file[5:8])
+                i = 0 
                 for user in list_users:
                     
                     user_id = user['userId']
@@ -112,7 +113,7 @@ class Crew3UserCrawler:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
-                                if t% 500==0:
+                                if i% 500==0:
                                     logger.info(f'Check user {t} ')
                             else:
                                 raise requests.exceptions.RequestException(
@@ -122,9 +123,10 @@ class Crew3UserCrawler:
                         finally:
                             time.sleep(0.00001)
                     t+=1
+                    i+=1
                 users.update(data)
                 # exporter.update_users(data)
-                with open('user_'+f'{idx}'+'.json', 'w') as f:
+                with open('user_'+f'{t}'+'.json', 'w') as f:
                     json.dump(users, f)
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
