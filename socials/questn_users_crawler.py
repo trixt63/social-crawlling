@@ -69,7 +69,7 @@ class QuestNUserCrawler:
                 logger.exception(ex)
             finally:
                 time.sleep(1)
-
+                
         data = sorted(data, key=lambda x: x['submissions'], reverse=True)
 
         with open('test/QuestN/quests.json', 'w') as f:

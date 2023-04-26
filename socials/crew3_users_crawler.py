@@ -88,9 +88,9 @@ class Crew3UserCrawler:
         logger.info("###############################\n")
 
         users = {}
-        try:
-            t = int(file[5:8])
-            for idx, quest in enumerate(data):
+        t = int(file[5:8])
+        for idx, quest in enumerate(data):
+            try:
                 logger.info(f'[{idx}] Get users of {quest["name"]}...')
                 subdomain = quest['subdomain']
 
@@ -131,12 +131,9 @@ class Crew3UserCrawler:
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
                 t+=1
-        except KeyboardInterrupt:
-            logger.exception('Killed')
-        finally:
-            with open('users.json', 'w') as f:
-                json.dump(users, f)
-            logger.info(f'Saved {len(users)} users')
+            except KeyboardInterrupt:
+                pass
+
 
     @staticmethod
     def format_quester(quester):
