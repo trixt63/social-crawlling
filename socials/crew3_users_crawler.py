@@ -131,8 +131,9 @@ class Crew3UserCrawler:
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
                 t+=1
-            except KeyboardInterrupt:
-                pass
+            except Exception as e:
+                logger.info(f"err {e} as index: {t}")
+
 
 
     @staticmethod
