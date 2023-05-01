@@ -88,7 +88,7 @@ class Crew3UserCrawler:
         logger.info("###############################\n")
 
         users = {}
-        t = int(file[5:8])
+        t = int(file[5:9])
         for idx, quest in enumerate(data):
             try:
                 logger.info(f'[{idx}] Get users of {quest["name"]}...')
