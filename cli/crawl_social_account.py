@@ -21,5 +21,5 @@ def crawl_social_account(output, file,batch_size, min_submissions, max_submissio
     db = SocialUsersDB(output)
 
     crawler = Crew3UserCrawler()
-    crawler.get_users(file =file,exporter= db)
+    crawler.get_users(communities_file=file, exporter= db)
     # crawler.get_users(user_batch_size=batch_size, min_submissions=min_submissions, max_submissions=max_submissions, exporter=db)
