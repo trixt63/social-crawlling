@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(sys.path[0]))
+
 import json
 import time
 
@@ -63,7 +67,7 @@ class Crew3UserCrawler:
 
                     quests = quests_response['communities']
                     data.extend([{'id': q['id'], 'name': q['name'], 'subdomain': q['subdomain'], 'totalMembers': int(q.get('totalMembers', 0))} for q in quests])
-                    logger.info(f'Loaded {len(data)} communities after page [{page + 1}]')
+                    logger.info(f'Loaded {len(data)} communities after page [{page + 1}] / {number_of_pages}')
                 else:
                     raise requests.exceptions.RequestException(f'Fail ({quests_resp.status_code}) to load communities of page [{page}]')
             except Exception as ex:
@@ -78,31 +82,35 @@ class Crew3UserCrawler:
             json.dump(data, f)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self, file ="communities.json",exporter: SocialUsersDB = None):
-        with open('test/Crew3/'+file) as f:
+    def get_users(self, file ="test/Crew3/communities.json", exporter: SocialUsersDB = None):
+        with open(file) as f:
             data = json.load(f)
             data = [q for q in data if q['totalMembers']]
+        n_communities = len(data)
 
         logger.info("###############################")
-        logger.info(f'There are {len(data)} communities')
+        logger.info(f'There are {n_communities} communities')
         logger.info("###############################\n")
 
-        users = {}
-        t = int(file[5:10])
+        # users = {}
+        # t = int(file[5:10])
         for idx, quest in enumerate(data):
             try:
-                logger.info(f'[{idx}] Get users of {quest["name"]}...')
+                logger.info(f'[{idx}] / {n_communities} Get users of {quest["name"]}...')
                 subdomain = quest['subdomain']
 
                 leaderboard_resp = self._get_leaderboard(subdomain)
                 list_users = leaderboard_resp.json()['leaderboard']
-                logger.info(f'There are {len(list_users)} users to get info')
+                n_users = len(list_users)
+                logger.info(f'There are {n_users} users to get info')
 
                 data = {}
                 
-                i = 0 
-                for user in list_users:
-                    
+                # i = 0
+                users = {}
+                _batch_size_users = 100
+                _batch_users = {}
+                for i, user in enumerate(list_users):
                     user_id = user['userId']
                     if user_id in users:
                         continue
@@ -113,26 +121,31 @@ class Crew3UserCrawler:
                                 questers_response = questers_resp.json()
                                 q_ = self.format_quester(questers_response)
                                 if q_:
-                                    data[user_id] = q_
-                                if i% 500==0:
-                                    logger.info(f'Check user {t} ')
+                                    # data[user_id] = q_
+                                    _batch_users[user_id] = q_
+                                    _batch_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.00001)
-                    i+=1
+                            time.sleep(0.0001)
+                    if not i % 100:
+                        users.update(_batch_users)
+                        exporter.update_users(_batch_users)
+                        _batch_users = {}
+                        logger.info(f"To {i} / {n_users} users")
+                    # i+=1
                 users.update(data)
-                # exporter.update_users(data)
-                with open('user_'+f'{t}'+'.json', 'w') as f:
-                    json.dump(users, f)
-                logger.info(f'Saved {len(data)} users in {quest["name"]}')
-                logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
-                t+=1
+                # with open('user_'+f'{t}'+'.json', 'w') as f:
+                #     json.dump(users, f)
+                # logger.info(f'Saved {len(data)} users in {quest["name"]}')
+                # logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
+                # t+=1
             except Exception as e:
-                logger.info(f"err {e} as index: {t}")
+                # logger.info(f"err {e} as index: {t}")
+                logger.exception(f"Error at {idx}: {e}")
 
 
 
@@ -164,7 +177,11 @@ class Crew3UserCrawler:
     #     exporter.update_users(data)
     #     logger.info(f'Exported {len(data)} users')
 
+
 if __name__ == '__main__':
     crawler = Crew3UserCrawler()
     # crawler.get_top_communities(batch_size=100)
-    crawler.get_users()
+    crawler.get_users(
+        file='../test/Crew3/communities.json',
+        exporter=SocialUsersDB(connection_url='mongodb://admin:admin123@localhost:27017/',
+                               database='SocialDatabase'))

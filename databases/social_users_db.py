@@ -10,9 +10,11 @@ class SocialUsersDB:
 
         self.users_collection = self.mongo_db['users']
 
-    def update_users(self, users):
-        data = []
-        for user in users:
+    def update_users(self, users: dict):
+        updates = []
+        for _id, user in users.items():
+            user['_id'] = _id
+        for user in users.values():
             number_of_quests = user.pop('numberOfQuests', 1)
-            data.append(UpdateOne({'_id': user['_id']}, {'$set': user, '$inc': {'numberOfQuests': number_of_quests}}, upsert=True))
-        self.users_collection.bulk_write(data)
+            updates.append(UpdateOne({'_id': user['_id']}, {'$set': user, '$inc': {'numberOfQuests': number_of_quests}}, upsert=True))
+        self.users_collection.bulk_write(updates)
