@@ -127,6 +127,7 @@ class Crew3UserCrawler:
 
                 _batch_users = {}
                 for i, user in enumerate(list_users):
+
                     user_id = user['userId']
                     if user_id in users:
                         continue
@@ -146,7 +147,7 @@ class Crew3UserCrawler:
                         except Exception as ex:
                             logger.exception(ex)
                         finally:
-                            time.sleep(0.0001)
+                            time.sleep(0.001)
                     if not i % self.batch_size:
                         users.update(_batch_users)
                         exporter.update_users(_batch_users)

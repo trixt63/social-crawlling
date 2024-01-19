@@ -14,7 +14,7 @@ logger = get_logger('Crawl social account')
 @click.option('-od', '--output-database', type=str, default=None, help='DB Database name')
 @click.option('-f', '--file', type=str, default='data/zealy_communities.json', show_default=True,
               help='File path')
-@click.option('-b', '--batch-size', default=1000, show_default=True, type=int, help='Batch size')
+@click.option('-b', '--batch-size', default=100, show_default=True, type=int, help='Batch size')
 def crawl_zealy(output, output_database, file, batch_size):
     db = SocialUsersDB(connection_url=output, database=output_database)
     crawler = Crew3UserCrawler(batch_size=batch_size,
@@ -22,6 +22,6 @@ def crawl_zealy(output, output_database, file, batch_size):
                                database=db)
     crawler_old = Crew3UserCrawler_old()
 
-    # crawler.get_top_communities()
-    # crawler.get_users()
-    crawler_old.get_users()
+    crawler.get_top_communities()
+    crawler.get_users()
+    # crawler_old.get_users()

@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from utils.logger_utils import get_logger
 from databases.social_users_db import SocialUsersDB
 
-logger = get_logger('Crew3 User Crawler')
+logger = get_logger('Crew3 User Crawler Old')
 
 BASE_URL = 'https://api.zealy.io/communities'
 
@@ -88,7 +88,7 @@ class Crew3UserCrawler_old:
         logger.info("###############################\n")
 
         users = {}
-        t = int(file[5:10])
+        # t = int(file[5:10])
         for idx, quest in enumerate(data):
             try:
                 logger.info(f'[{idx}] Get users of {quest["name"]}...')
@@ -114,8 +114,8 @@ class Crew3UserCrawler_old:
                                 q_ = self.format_quester(questers_response)
                                 if q_:
                                     data[user_id] = q_
-                                if i% 500==0:
-                                    logger.info(f'Check user {t} ')
+                                # if i% 500==0:
+                                #     logger.info(f'Check user {t} ')
                             else:
                                 raise requests.exceptions.RequestException(
                                     f'Fail ({questers_resp.status_code}) to load user {user_id}')
@@ -126,13 +126,13 @@ class Crew3UserCrawler_old:
                     i+=1
                 users.update(data)
                 # exporter.update_users(data)
-                with open('user_'+f'{t}'+'.json', 'w') as f:
-                    json.dump(users, f)
+                # with open('user_'+f'{t}'+'.json', 'w') as f:
+                #     json.dump(users, f)
                 logger.info(f'Saved {len(data)} users in {quest["name"]}')
                 logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
-                t+=1
+                # t+=1
             except Exception as e:
-                logger.info(f"err {e} as index: {t}")
+                logger.info(f"err {e} ")
 
 
 
