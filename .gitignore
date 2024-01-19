@@ -169,5 +169,5 @@ logging.log*
 
 # Test folders
 .data/
-tests/
+test/
 data/

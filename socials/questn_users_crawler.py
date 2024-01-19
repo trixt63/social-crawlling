@@ -166,5 +166,6 @@ class QuestNUserCrawler:
 
 if __name__ == '__main__':
     crawler = QuestNUserCrawler()
-    # crawler.get_quests(quest_batch_size=100)
-    crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000)
+    crawler.get_quests(quest_batch_size=100)
+    crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000, 
+                      exporter=SocialUsersDB(connection_url='mongodb://admin:admin123@localhost:27017/', database='SocialDatabase'))
