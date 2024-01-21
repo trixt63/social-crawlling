@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from utils.logger_utils import get_logger
 from databases.social_users_db import SocialUsersDB
 
-logger = get_logger('Crew3 User Crawler')
+logger = get_logger('Zealy User Crawler')
 
 BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
@@ -24,7 +24,7 @@ headers = {
 }
 
 
-class Crew3UserCrawler:
+class ZealyUserCrawler:
     def __init__(self, batch_size, communities_file, database: SocialUsersDB):
         self.batch_size = batch_size
         self.communities_file = communities_file
@@ -103,55 +103,49 @@ class Crew3UserCrawler:
         logger.info(f'There are {n_communities} communities')
         logger.info("###############################\n")
 
-        # users = {}
-        # t = int(file[5:10])
         for _i, community in enumerate(communities):
-            logger.info(f'Get users of community [{_i}] / {n_communities}: {community["name"]}...')
+            logger.info(f'Get users of community {_i} / {n_communities}: {community["name"]}')
 
             _n_pages = 1
             _page = 1
             _data = []
             while _page <= _n_pages:
-                _all_users_ids: set[str] = set()
+                # _all_users_ids: set[str] = set()
                 subdomain = community['subdomain']
                 try:
                     leaderboard_resp = self._get_leaderboard(subdomain=subdomain, page=_page)
-                    # list_users = leaderboard_resp.json()['leaderboard']
                     _n_pages = leaderboard_resp.json()['totalPages']
                     _n_users = leaderboard_resp.json()['totalRecords']
 
-                    logger.info(f'{community}: {_n_pages} pages, {_n_users} users to get info')
-
                     list_users = leaderboard_resp.json()['data']
-                    # i = 0
                     _page_users: dict[str, dict] = dict()  # {user_id: user_info}
                     for user in list_users:
                         user_id = user['userId']
-                        if user_id in _all_users_ids:
-                            logger.info(f'{user_id} in it')
-                            continue
-                        else:
-                            try:
-                                user_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
-                                if 200 <= user_resp.status_code < 300:
-                                    user_info = self.format_quester(user_resp.json())
-                                    if user_info:
-                                        _page_users[user_id] = user_info
-                                        _page_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
-                                else:
-                                    raise requests.exceptions.RequestException(
-                                        f'Fail ({user_resp.status_code}) to load user {user_id}')
-                            except Exception as ex:
-                                logger.exception(ex)
-                            finally:
-                                _all_users_ids.add(user_id)
-                                time.sleep(0.001)
-
-                            # update to database
+                        # if user_id in _all_users_ids:
+                        #     continue
+                        # else:
+                        try:
+                            user_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
+                            if 200 <= user_resp.status_code < 300:
+                                user_info = self.format_quester(user_resp.json())
+                                if user_info:
+                                    _page_users[user_id] = user_info
+                                    # _page_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
+                            else:
+                                raise requests.exceptions.RequestException(
+                                    f'Fail ({user_resp.status_code}) to load user {user_id}')
+                        except Exception as ex:
+                            logger.exception(ex)
+                        finally:
+                            # _all_users_ids.add(user_id)
+                            time.sleep(0.001)
+                    logger.info(f'{community["name"]}: scraped to page {_page} / {_n_pages} pages, '
+                                f'total {_n_users} users')
+                    # update to database
                     self.database.update_users(_page_users)
                     _page_users.clear()
+                    _page += 1
                 except Exception as e:
-                    # logger.info(f"err {e} as index: {t}")
                     logger.exception(f"Error at {_i}: {e}")
 
     @staticmethod
@@ -178,7 +172,7 @@ class Crew3UserCrawler:
 
 if __name__ == '__main__':
     db = SocialUsersDB()
-    crawler = Crew3UserCrawler(batch_size=100,
+    crawler = ZealyUserCrawler(batch_size=100,
                                communities_file='../data/Crew3/communities.json',
                                database=db)
     crawler.get_top_communities()
