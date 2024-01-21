@@ -139,7 +139,8 @@ class ZealyUserCrawler:
                         finally:
                             # _all_users_ids.add(user_id)
                             time.sleep(0.001)
-                    logger.info(f'{community["name"]}: scraped to page {_page} / {_n_pages} pages, '
+                    logger.info(f'Community {_i}/{n_communities} {community["name"]}: '
+                                f'scraped to page {_page} / {_n_pages} pages, '
                                 f'total {_n_users} users')
                     # update to database
                     self.database.update_users(_page_users)
