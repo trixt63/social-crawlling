@@ -145,6 +145,10 @@ class ZealyUserCrawler:
                     logger.info(f'Community {_i}/{n_communities} {community["name"]}: '
                                 f'scraped to page {_page} / {_n_pages} pages, '
                                 f'total {_n_users} users')
+
+                    # if community has no users with blockchain address, move on to next community
+                    if len(_page_users) == 0:
+                        break
                     # update to database
                     self.database.update_users(_page_users)
                     _page_users.clear()
