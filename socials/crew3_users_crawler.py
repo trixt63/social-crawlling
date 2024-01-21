@@ -130,6 +130,7 @@ class ZealyUserCrawler:
                                 user_info = self.format_quester(user_resp.json())
                                 if user_info:
                                     _page_users[user_id] = user_info
+                                    _page_users[user_id]['idZealy'] = user_info.pop('id')
                                     # _page_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
                             else:
                                 raise requests.exceptions.RequestException(
