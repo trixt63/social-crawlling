@@ -22,6 +22,6 @@ def crawl_zealy(output, output_database, file, batch_size):
                                database=db)
     # crawler_old = Crew3UserCrawler_old()
 
-    crawler.get_top_communities()
+    # crawler.get_top_communities()
     crawler.get_users()
     # crawler_old.get_users()
