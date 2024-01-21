@@ -14,6 +14,7 @@ from databases.social_users_db import SocialUsersDB
 logger = get_logger('Crew3 User Crawler')
 
 BASE_URL = 'https://api.zealy.io/communities'
+BASE_URL_2 = 'https://backend.zealy.io/api/communities'
 
 headers = {
     'Origin': 'https://zealy.io',
@@ -30,7 +31,7 @@ class Crew3UserCrawler:
         self.database = database
 
     @staticmethod
-    def _get_communities(page=1, count=30):
+    def _get_communities(page=1, count=30) -> requests.api.request:
         query = {
             'limit': count,
             'page': page,
@@ -41,19 +42,17 @@ class Crew3UserCrawler:
         return response
 
     @staticmethod
-    def _get_leaderboard(subdomain, page=1, count=1000):
-        # For pagination
-        # query = {
-        #     'page': page,
-        #     'limit': count
-        # }
-        # url = f'{BASE_URL}/{subdomain}/leaderboard?{urlencode(query)}'
-        url = f'{BASE_URL}/{subdomain}/leaderboard'
+    def _get_leaderboard(subdomain, page) -> requests.api.request:
+        query = {
+            'page': page
+            # 'limit': count
+        }
+        url = f'{BASE_URL_2}/{subdomain}/leaderboard?{urlencode(query)}'
         response = requests.get(url, headers=headers)
         return response
 
     @staticmethod
-    def _get_user(subdomain, user_id):
+    def _get_user(subdomain, user_id) -> requests.api.request:
         url = f'{BASE_URL}/{subdomain}/users/{user_id}'
         response = requests.get(url, headers=headers)
         return response
@@ -74,10 +73,11 @@ class Crew3UserCrawler:
                     quests_response = quests_resp.json()
 
                     number_of_pages = quests_response['totalPages']
-                    number_of_pages = 10
+                    # number_of_pages = 10  # test
 
                     quests = quests_response['communities']
-                    data.extend([{'id': q['id'], 'name': q['name'], 'subdomain': q['subdomain'], 'totalMembers': int(q.get('totalMembers', 0))} for q in quests])
+                    data.extend([{'id': q['id'], 'name': q['name'], 'subdomain': q['subdomain'], 'totalMembers': int(q.get('totalMembers', 0))}
+                                 for q in quests])
                     logger.info(f'Loaded {len(data)} communities after page [{page + 1}] / {number_of_pages}')
                 else:
                     raise requests.exceptions.RequestException(f'Fail ({quests_resp.status_code}) to load communities of page [{page}]')
@@ -93,16 +93,11 @@ class Crew3UserCrawler:
             json.dump(data, f, indent=2)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self, communities_file=None, exporter: SocialUsersDB = None):
-        if not communities_file:
-            communities_file = self.communities_file
-        if not exporter:
-            exporter = self.database
-
-        with open(communities_file) as f:
-            data = json.load(f)
-            data = [q for q in data if q['totalMembers']]
-        n_communities = len(data)
+    def get_users(self):
+        with open(self.communities_file) as f:
+            communities = json.load(f)
+            communities = [q for q in communities if q['totalMembers']]
+        n_communities = len(communities)
 
         logger.info("###############################")
         logger.info(f'There are {n_communities} communities')
@@ -110,62 +105,58 @@ class Crew3UserCrawler:
 
         # users = {}
         # t = int(file[5:10])
-        for idx, quest in enumerate(data):
-            try:
-                logger.info(f'[{idx}] / {n_communities} Get users of {quest["name"]}...')
-                subdomain = quest['subdomain']
+        for _i, community in enumerate(communities):
+            logger.info(f'Get users of community [{_i}] / {n_communities}: {community["name"]}...')
 
-                leaderboard_resp = self._get_leaderboard(subdomain)
-                list_users = leaderboard_resp.json()['leaderboard']
-                n_users = len(list_users)
-                logger.info(f'There are {n_users} users to get info')
+            _n_pages = 1
+            _page = 1
+            _data = []
+            while _page <= _n_pages:
+                _all_users_ids: set[str] = set()
+                subdomain = community['subdomain']
+                try:
+                    leaderboard_resp = self._get_leaderboard(subdomain=subdomain, page=_page)
+                    # list_users = leaderboard_resp.json()['leaderboard']
+                    _n_pages = leaderboard_resp.json()['totalPages']
+                    _n_users = leaderboard_resp.json()['totalRecords']
 
-                data = {}
-                
-                # i = 0
-                users = {}
+                    logger.info(f'{community}: {_n_pages} pages, {_n_users} users to get info')
 
-                _batch_users = {}
-                for i, user in enumerate(list_users):
+                    list_users = leaderboard_resp.json()['data']
+                    # i = 0
+                    _page_users: dict[str, dict] = dict()  # {user_id: user_info}
+                    for user in list_users:
+                        user_id = user['userId']
+                        if user_id in _all_users_ids:
+                            logger.info(f'{user_id} in it')
+                            continue
+                        else:
+                            try:
+                                user_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
+                                if 200 <= user_resp.status_code < 300:
+                                    user_info = self.format_quester(user_resp.json())
+                                    if user_info:
+                                        _page_users[user_id] = user_info
+                                        _page_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
+                                else:
+                                    raise requests.exceptions.RequestException(
+                                        f'Fail ({user_resp.status_code}) to load user {user_id}')
+                            except Exception as ex:
+                                logger.exception(ex)
+                            finally:
+                                _all_users_ids.add(user_id)
+                                time.sleep(0.001)
 
-                    user_id = user['userId']
-                    if user_id in users:
-                        continue
-                    else:
-                        try:
-                            questers_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
-                            if 200 <= questers_resp.status_code < 300:
-                                questers_response = questers_resp.json()
-                                q_ = self.format_quester(questers_response)
-                                if q_:
-                                    # data[user_id] = q_
-                                    _batch_users[user_id] = q_
-                                    _batch_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
-                            else:
-                                raise requests.exceptions.RequestException(
-                                    f'Fail ({questers_resp.status_code}) to load user {user_id}')
-                        except Exception as ex:
-                            logger.exception(ex)
-                        finally:
-                            time.sleep(0.001)
-                    if not i % self.batch_size:
-                        users.update(_batch_users)
-                        exporter.update_users(_batch_users)
-                        _batch_users = {}
-                        logger.info(f"To {i} / {n_users} users")
-                    # i+=1
-                users.update(data)
-                # with open('user_'+f'{t}'+'.json', 'w') as f:
-                #     json.dump(users, f)
-                # logger.info(f'Saved {len(data)} users in {quest["name"]}')
-                # logger.info(f'End {quest["name"]} with {len(data)} [{len(users)}] users \n')
-                # t+=1
-            except Exception as e:
-                # logger.info(f"err {e} as index: {t}")
-                logger.exception(f"Error at {idx}: {e}")
+                            # update to database
+                    self.database.update_users(_page_users)
+                    _page_users.clear()
+                except Exception as e:
+                    # logger.info(f"err {e} as index: {t}")
+                    logger.exception(f"Error at {_i}: {e}")
 
     @staticmethod
     def format_quester(quester):
+        """Remove users without blockchain addresses"""
         displayed_information = quester.get('displayedInformation') or []
         if 'wallet' not in displayed_information or len(displayed_information) <= 1:
             return None
