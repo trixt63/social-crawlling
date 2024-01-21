@@ -3,7 +3,8 @@ from config import SocialUsersDBConfig
 
 
 class SocialUsersDB:
-    def __init__(self, connection_url=None, database=None):
+    def __init__(self, connection_url=None, database=None,
+                 collection=None):
         if not connection_url:
             connection_url = SocialUsersDBConfig.CONNECTION_URL
         if not database:
@@ -13,7 +14,10 @@ class SocialUsersDB:
 
         self.mongo_db = self.connection[database]
 
-        self.users_collection = self.mongo_db['users']
+        if not collection:
+            self.users_collection = self.mongo_db[SocialUsersDBConfig.COLLECTION]
+        else:
+            self.users_collection = self.mongo_db[collection]
 
     def update_users(self, users: dict):
         updates = []
