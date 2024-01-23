@@ -161,7 +161,8 @@ class ZealyUserCrawler:
                     _page_users.clear()
                     _page += 1
                 except Exception as e:
-                    logger.exception(f"Error at {_i}: {e}")
+                    logger.exception(f"Error at community index {_i} ({community['name']}): page {_page}: {e}")
+                    time.sleep(3)
 
     @staticmethod
     def format_quester(quester):
