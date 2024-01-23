@@ -16,6 +16,8 @@ logger = get_logger('Zealy User Crawler')
 BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
 
+LIMIT_NUMBER_OF_PAGES = 10
+
 headers = {
     'Origin': 'https://zealy.io',
     'Referer': 'https://zealy.io/',
@@ -109,7 +111,7 @@ class ZealyUserCrawler:
             _n_pages = 1
             _page = 1
             _data = []
-            while _page <= _n_pages:
+            while _page <= _n_pages and _page < LIMIT_NUMBER_OF_PAGES:
                 # _all_users_ids: set[str] = set()
                 subdomain = community['subdomain']
                 try:
@@ -143,6 +145,10 @@ class ZealyUserCrawler:
                     logger.info(f'Community {_i}/{n_communities} {community["name"]}: '
                                 f'scraped to page {_page} / {_n_pages} pages, '
                                 f'total {_n_users} users')
+
+                    # if community has no users with blockchain address, move on to next community
+                    if len(_page_users) == 0:
+                        break
                     # update to database
                     self.database.update_users(_page_users)
                     _page_users.clear()
