@@ -15,8 +15,11 @@ logger = get_logger('Crawl social account')
 @click.option( '--new-community', is_flag=True, help='Get new community file')
 @click.option('-f', '--file', type=str, default='data/zealy_communities.json', show_default=True,
               help='Communities file path')
-@click.option('-b', '--batch-size', default=50, show_default=True, type=int, help='Batch size')
-def crawl_zealy(output, output_database, new_community, file, batch_size):
+@click.option('-s', '--start-idx', default=0, show_default=True, type=int,
+              help='Start index in communities file')
+@click.option('-b', '--batch-size', default=50, show_default=True, type=int,
+              help='Batch size')
+def crawl_zealy(output, output_database, new_community, file, start_idx ,batch_size):
     db = SocialUsersDB(connection_url=output, database=output_database)
     crawler = ZealyUserCrawler(batch_size=batch_size,
                                communities_file=file,
@@ -24,4 +27,4 @@ def crawl_zealy(output, output_database, new_community, file, batch_size):
 
     if new_community:
         crawler.get_top_communities()
-    crawler.get_users()
+    crawler.get_users(start_community_idx=start_idx)

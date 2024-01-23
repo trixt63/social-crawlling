@@ -95,10 +95,15 @@ class ZealyUserCrawler:
             json.dump(data, f, indent=2)
         logger.info(f'Saved {len(data)} communities')
 
-    def get_users(self):
+    def get_users(self, start_community_idx: int = 0):
+        """Get users from a community file
+        Params:
+            start_community_idx: only start from community at this idx from the communities json file
+        """
         with open(self.communities_file) as f:
             communities = json.load(f)
             communities = [q for q in communities if q['totalMembers']]
+
         n_communities = len(communities)
 
         logger.info("###############################")
@@ -106,8 +111,10 @@ class ZealyUserCrawler:
         logger.info("###############################\n")
 
         for _i, community in enumerate(communities):
-            logger.info(f'Get users of community {_i} / {n_communities}: {community["name"]}')
+            if _i < start_community_idx:  # skip already scraped communities
+                continue
 
+            logger.info(f'Get users of community {_i} / {n_communities}: {community["name"]}')
             _n_pages = 1
             _page = 1
             _data = []
