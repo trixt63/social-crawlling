@@ -4,14 +4,15 @@ sys.path.append(os.path.dirname(sys.path[0]))
 
 import json
 import time
-
 import requests
 from urllib.parse import urlencode
 
-from utils.logger_utils import get_logger
+from utils.logger_utils import get_logger, get_file_handler
 from databases.social_users_db import SocialUsersDB
+from utils.retry_handler import retry_handler
 
 logger = get_logger('Zealy User Crawler')
+logger.addHandler(get_file_handler())
 
 BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
@@ -75,7 +76,6 @@ class ZealyUserCrawler:
                     quests_response = quests_resp.json()
 
                     number_of_pages = quests_response['totalPages']
-                    # number_of_pages = 10  # test
 
                     quests = quests_response['communities']
                     data.extend([{'id': q['id'], 'name': q['name'], 'subdomain': q['subdomain'], 'totalMembers': int(q.get('totalMembers', 0))}
@@ -115,57 +115,50 @@ class ZealyUserCrawler:
                 continue
 
             logger.info(f'Get users of community {_i} / {n_communities}: {community["name"]}')
-            _n_pages = 1
-            _page = 1
-            _data = []
-            while _page <= _n_pages and _page < LIMIT_NUMBER_OF_PAGES:
-                # _all_users_ids: set[str] = set()
-                subdomain = community['subdomain']
+            self._get_community_users(community_info=community)
+
+    @retry_handler(retries_number=3)
+    def _get_community_users(self, community_info: dict):
+        n_pages = 1
+        page_number = 1
+        while page_number <= n_pages:
+            page_users: dict[str, dict] = dict()  # {user_id: user_info}
+
+            leaderboard_resp = self._get_leaderboard(subdomain=community_info['subdomain'],
+                                                     page=page_number)
+            n_pages = leaderboard_resp.json()['totalPages']
+            n_users = leaderboard_resp.json()['totalRecords']
+            list_users = leaderboard_resp.json()['data']
+            for user in list_users:
+                user_id = user['userId']
                 try:
-                    leaderboard_resp = self._get_leaderboard(subdomain=subdomain, page=_page)
-                    _n_pages = leaderboard_resp.json()['totalPages']
-                    _n_users = leaderboard_resp.json()['totalRecords']
+                    user_resp = self._get_user(subdomain=community_info['subdomain'],
+                                               user_id=user['userId'])
+                    assert 200 <= user_resp.status_code < 300
+                    user_info = self._format_quester(user_resp.json())
+                    page_users[user_id] = user_info
+                    page_users[user_id]['idZealy'] = user_info.pop('id')
+                except AssertionError as a:
+                    logger.exception(f'Failed to load user id {user_id}: {a}')
+                except KeyError as k:
+                    logger.exception(f'Failed to get info of user id {user_id}: {k}')
+                except Exception as ex:
+                    logger.exception(ex)
+                finally:
+                    time.sleep(0.0005)
 
-                    list_users = leaderboard_resp.json()['data']
-                    _page_users: dict[str, dict] = dict()  # {user_id: user_info}
-                    for user in list_users:
-                        user_id = user['userId']
-                        # if user_id in _all_users_ids:
-                        #     continue
-                        # else:
-                        try:
-                            user_resp = self._get_user(subdomain=subdomain, user_id=user['userId'])
-                            if 200 <= user_resp.status_code < 300:
-                                user_info = self.format_quester(user_resp.json())
-                                if user_info:
-                                    _page_users[user_id] = user_info
-                                    _page_users[user_id]['idZealy'] = user_info.pop('id')
-                                    # _page_users[user_id].update({k: user[k] for k in ['xp', 'name', 'numberOfQuests']})
-                            else:
-                                raise requests.exceptions.RequestException(
-                                    f'Fail ({user_resp.status_code}) to load user {user_id}')
-                        except Exception as ex:
-                            logger.exception(ex)
-                        finally:
-                            # _all_users_ids.add(user_id)
-                            time.sleep(0.001)
-                    logger.info(f'Community {_i}/{n_communities} {community["name"]}: '
-                                f'scraped to page {_page} / {_n_pages} pages, '
-                                f'total {_n_users} users')
+            logger.info(f'Community {community_info["name"]}: '
+                        f'scraped to page {page_number} / {n_pages} pages, '
+                        f'total {n_users} users')
 
-                    # if community has no users with blockchain address, move on to next community
-                    if len(_page_users) == 0:
-                        break
-                    # update to database
-                    self.database.update_users(_page_users)
-                    _page_users.clear()
-                    _page += 1
-                except Exception as e:
-                    logger.exception(f"Error at community index {_i} ({community['name']}): page {_page}: {e}")
-                    time.sleep(3)
+            # if community has no users with blockchain address, move on to next community
+            if len(page_users) == 0 or page_number > LIMIT_NUMBER_OF_PAGES:
+                break
+            # update to database
+            self.database.update_users(page_users)
 
     @staticmethod
-    def format_quester(quester):
+    def _format_quester(quester):
         """Remove users without blockchain addresses"""
         displayed_information = quester.get('displayedInformation') or []
         if 'wallet' not in displayed_information or len(displayed_information) <= 1:
