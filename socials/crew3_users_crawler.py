@@ -115,7 +115,10 @@ class ZealyUserCrawler:
                 continue
 
             logger.info(f'Get users of community {_i} / {n_communities}: {community["name"]}')
-            self._get_community_users(community_info=community)
+            try:
+                self._get_community_users(community_info=community)
+            except Exception as ex:
+                logger.exception(f"Can't get users of community {community['name']}: {ex}")
 
     @retry_handler(retries_number=3)
     def _get_community_users(self, community_info: dict):
@@ -131,21 +134,11 @@ class ZealyUserCrawler:
             list_users = leaderboard_resp.json()['data']
             for user in list_users:
                 user_id = user['userId']
-                try:
-                    user_resp = self._get_user(subdomain=community_info['subdomain'],
-                                               user_id=user['userId'])
-                    assert 200 <= user_resp.status_code < 300
-                    user_info = self._format_quester(user_resp.json())
+                user_info = self._get_user_info(community_subdomain=community_info['subdomain'],
+                                                user_id=user_id)
+                if user_info:
                     page_users[user_id] = user_info
-                    page_users[user_id]['idZealy'] = user_info.pop('id')
-                except AssertionError as a:
-                    logger.exception(f'Failed to load user id {user_id}: {a}')
-                except KeyError as k:
-                    logger.exception(f'Failed to get info of user id {user_id}: {k}')
-                except Exception as ex:
-                    logger.exception(ex)
-                finally:
-                    time.sleep(0.0005)
+                    page_users[user_id]['idZealy'] = user_info['id']
 
             logger.info(f'Community {community_info["name"]}: '
                         f'scraped to page {page_number} / {n_pages} pages, '
@@ -156,6 +149,27 @@ class ZealyUserCrawler:
                 break
             # update to database
             self.database.update_users(page_users)
+            page_number += 1
+
+    def _get_user_info(self, community_subdomain: str, user_id: str,
+                       sleep_time: float = 0.0005) -> dict:
+        user_info = dict()
+
+        try:
+            user_resp = self._get_user(subdomain=community_subdomain,
+                                       user_id=user_id)
+            assert 200 <= user_resp.status_code < 300
+            user_info = self._format_quester(user_resp.json())
+        except AssertionError as a:
+            logger.exception(f'Failed to load user id {user_id}: {a}')
+        except KeyError as k:
+            logger.exception(f'Failed to get info of user id {user_id}: {k}')
+        except Exception as ex:
+            logger.exception(ex)
+        finally:
+            time.sleep(sleep_time)
+
+        return user_info
 
     @staticmethod
     def _format_quester(quester):

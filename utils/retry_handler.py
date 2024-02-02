@@ -16,7 +16,7 @@ def retry_handler(retries_number: int = 0):
                 try:
                     return func(*args, **kwargs)
                 except Exception as ex:
-                    logger.error(ex)
+                    logger.error(f'Error at {func.__name__}: {ex}')
                     _retry_time += 1
                     if retries_number and _retry_time >= retries_number:
                         raise ex
