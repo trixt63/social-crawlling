@@ -13,7 +13,7 @@ def get_console_handler():
 
 
 def get_file_handler():
-    file_handler = RotatingFileHandler(LOG_FILE, maxBytes=2000, backupCount=1)
+    file_handler = RotatingFileHandler(LOG_FILE, maxBytes=int(1e7), backupCount=1)
     file_handler.setFormatter(FORMATTER)
     return file_handler
 
