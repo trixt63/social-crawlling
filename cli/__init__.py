@@ -1,7 +1,7 @@
 import click
 
-from cli.crawl_social_account import crawl_social_account
 from cli.crawl_zealy import crawl_zealy
+from cli.crawl_questn import crawl_questn
 
 
 @click.group()
@@ -13,3 +13,4 @@ def cli(ctx):
 
 
 cli.add_command(crawl_zealy, 'crawl_zealy')
+cli.add_command(crawl_questn, 'crawl_questn')

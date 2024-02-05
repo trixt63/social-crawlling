@@ -1,28 +1,29 @@
 import click
 
-from socials.crew3_users_crawler import ZealyUserCrawler
+from socials.questn_users_crawler import QuestNUserCrawler
 from databases.social_users_db import SocialUsersDB
 from utils.logger_utils import get_logger
 
-logger = get_logger('Crawl social account')
+logger = get_logger('Crawl QuestN')
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-# @click.option('-o', '--output', type=str, default=None, help='User social DB')
-# @click.option('-od', '--output-database', type=str, default=None, help='DB Database name')
-@click.option( '--new-community', is_flag=True, help='Get new community file')
-@click.option('-f', '--file', type=str, default='data/zealy_communities.json', show_default=True,
-              help='Communities file path')
+@click.option( '-r', '--refresh', is_flag=True,
+               help='Refresh quests file')
+@click.option('-f', '--file', type=str, default='data/questn_quests.json', show_default=True,
+              help='Quests file path')
 @click.option('-s', '--start-idx', default=0, show_default=True, type=int,
-              help='Start index in communities file')
-@click.option('-b', '--batch-size', default=50, show_default=True, type=int,
-              help='Batch size for crawling new communities')
-def crawl_zealy(new_community, file, start_idx ,batch_size):
+              help='Start index in quests file')
+# @click.option('-b', '--batch-size', default=50, show_default=True, type=int,
+#               help='Batch size for crawling new quests')
+# @click.option('--min-sub', default=0, show_default=True, type=int,
+#               help='Minimal submissions for quest')
+# @click.option('--max-sub', default=0, show_default=True, type=int,
+#               help='Max submissions for quest')
+def crawl_questn(refresh, file, start_idx):
     db = SocialUsersDB()
-    crawler = ZealyUserCrawler(batch_size=batch_size,
-                               communities_file=file,
-                               database=db)
+    crawler = QuestNUserCrawler(quests_file=file)
 
-    if new_community:
-        crawler.get_top_communities()
-    crawler.get_users(start_community_idx=start_idx)
+    if refresh:
+        crawler.get_quests(quest_batch_size=100)
+    crawler.get_users(start_idx=start_idx, exporter=db)

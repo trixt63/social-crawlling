@@ -82,7 +82,12 @@ class QuestNUserCrawler:
             json.dump(data, f, indent=2)
         logger.info(f'Saved {len(data)} quests')
 
-    def get_users(self, user_batch_size=1000, min_submissions=0, max_submissions=None, exporter: SocialUsersDB = None):
+    def get_users(self,
+                  start_idx=0,
+                  user_batch_size=1000,
+                  min_submissions=10,
+                  max_submissions=None,
+                  exporter: SocialUsersDB = None):
         with open(self.quest_file, 'r') as f:
             data = json.load(f)
             data = [q for q in data if self.check_submission(q['submissions'], min_submissions, max_submissions)]
@@ -91,8 +96,9 @@ class QuestNUserCrawler:
         logger.info(f'There are {len(data)} quests')
         logger.info("###############################\n")
 
-        for idx, quest in enumerate(data):
-            logger.info(f'Get questers of quest {idx + 1} / {len(data)}: {quest["title"]}: ({quest["submissions"]} submissions)...')
+        for idx, quest in enumerate(data[start_idx:]):
+            logger.info(f'Get questers of quest {idx + start_idx} / {len(data)}: '
+                        f'{quest["title"]}: ({quest["submissions"]} submissions)...')
             quest_id = quest['id']
 
             number_of_pages = 1
@@ -172,6 +178,6 @@ class QuestNUserCrawler:
 
 if __name__ == '__main__':
     crawler = QuestNUserCrawler()
-    # crawler.get_quests(quest_batch_size=100)
-    crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000,
-                      exporter=SocialUsersDB())
+    crawler.get_quests(quest_batch_size=100)
+    # crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000,
+    #                   exporter=SocialUsersDB())
