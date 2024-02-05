@@ -9,9 +9,10 @@ from utils.logger_utils import get_logger
 
 logger = get_logger('QuestN User Crawler')
 
-BASE_URL = 'https://api.questn.com/consumer/quest'
+BASE_URL = 'https://api.questn.com/consumer'
 
-LIMIT_NUMBER_OF_PAGES = 10
+LIMIT_NUMBER_OF_PAGES = 100
+
 
 class QuestNUserCrawler:
     def __init__(self, quests_file: str = 'data/questn_quests.json'):
@@ -30,8 +31,7 @@ class QuestNUserCrawler:
             'chain_filter': 0,
             'user_id': 0
         }
-        # url = f'{BASE_URL}/discover_list/?{urlencode(query)}'
-        url = f'https://api.questn.com/consumer/explore/list/?{urlencode(query)}'
+        url = f'{BASE_URL}/explore/list/?{urlencode(query)}'
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
         }
@@ -45,8 +45,7 @@ class QuestNUserCrawler:
             'page': page,
             'count': count
         }
-        # url = f'{BASE_URL}/user_participants/?{urlencode(query)}'
-        url = f'https://api.questn.com/consumer/quest/user_participants/?{urlencode(query)}'
+        url = f'{BASE_URL}/quest/user_participants/?{urlencode(query)}'
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
         }
@@ -83,7 +82,12 @@ class QuestNUserCrawler:
             json.dump(data, f, indent=2)
         logger.info(f'Saved {len(data)} quests')
 
-    def get_users(self, user_batch_size=1000, min_submissions=0, max_submissions=None, exporter: SocialUsersDB = None):
+    def get_users(self,
+                  start_idx=0,
+                  user_batch_size=1000,
+                  min_submissions=10,
+                  max_submissions=None,
+                  exporter: SocialUsersDB = None):
         with open(self.quest_file, 'r') as f:
             data = json.load(f)
             data = [q for q in data if self.check_submission(q['submissions'], min_submissions, max_submissions)]
@@ -92,8 +96,9 @@ class QuestNUserCrawler:
         logger.info(f'There are {len(data)} quests')
         logger.info("###############################\n")
 
-        for idx, quest in enumerate(data):
-            logger.info(f'[{idx + 1}] Get questers of {quest["title"]} ({quest["submissions"]} submissions)...')
+        for idx, quest in enumerate(data[start_idx:]):
+            logger.info(f'Get questers of quest {idx + start_idx} / {len(data)}: '
+                        f'{quest["title"]}: ({quest["submissions"]} submissions)...')
             quest_id = quest['id']
 
             number_of_pages = 1
@@ -114,10 +119,10 @@ class QuestNUserCrawler:
                             q_ = self.format_quester(q)
                             if q_:
                                 page_questers.append(q_)
-                        logger.info(f'Loaded {len(page_questers)} questers after page [{page}] / {number_of_pages}')
+                        logger.info(f'Loaded {len(page_questers)} questers after page {page} / {number_of_pages}')
                     else:
                         raise requests.exceptions.RequestException(
-                            f'Fail ({questers_resp.status_code}) to load questers of page [{page}]')
+                            f'Fail ({questers_resp.status_code}) to load questers of page {page}')
                 except Exception as ex:
                     logger.exception(ex)
                 finally:
@@ -173,6 +178,6 @@ class QuestNUserCrawler:
 
 if __name__ == '__main__':
     crawler = QuestNUserCrawler()
-    # crawler.get_quests(quest_batch_size=100)
-    crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000,
-                      exporter=SocialUsersDB(connection_url='mongodb://admin:admin123@localhost:27017/', database='SocialDatabase'))
+    crawler.get_quests(quest_batch_size=100)
+    # crawler.get_users(user_batch_size=10000, min_submissions=5000, max_submissions=10000,
+    #                   exporter=SocialUsersDB())

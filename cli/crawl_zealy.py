@@ -4,7 +4,7 @@ from socials.crew3_users_crawler import ZealyUserCrawler
 from databases.social_users_db import SocialUsersDB
 from utils.logger_utils import get_logger
 
-logger = get_logger('Crawl social account')
+logger = get_logger('Crawl Zealy')
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
