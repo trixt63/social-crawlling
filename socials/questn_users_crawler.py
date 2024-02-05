@@ -9,7 +9,7 @@ from utils.logger_utils import get_logger
 
 logger = get_logger('QuestN User Crawler')
 
-BASE_URL = 'https://api.questn.com/consumer/quest'
+BASE_URL = 'https://api.questn.com/consumer'
 
 LIMIT_NUMBER_OF_PAGES = 100
 
@@ -31,8 +31,7 @@ class QuestNUserCrawler:
             'chain_filter': 0,
             'user_id': 0
         }
-        # url = f'{BASE_URL}/discover_list/?{urlencode(query)}'
-        url = f'https://api.questn.com/consumer/explore/list/?{urlencode(query)}'
+        url = f'{BASE_URL}/explore/list/?{urlencode(query)}'
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
         }
@@ -46,8 +45,7 @@ class QuestNUserCrawler:
             'page': page,
             'count': count
         }
-        # url = f'{BASE_URL}/user_participants/?{urlencode(query)}'
-        url = f'https://api.questn.com/consumer/quest/user_participants/?{urlencode(query)}'
+        url = f'{BASE_URL}/quest/user_participants/?{urlencode(query)}'
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
         }
