@@ -9,7 +9,6 @@ class SocialUsersDB:
             connection_url = SocialUsersDBConfig.CONNECTION_URL
         if not database:
             database = SocialUsersDBConfig.DATABASE
-        # self.connection_url = connection_url.split('@')[-1]
         self.connection = MongoClient(connection_url)
 
         self.mongo_db = self.connection[database]
