@@ -138,17 +138,21 @@ class ZealyUserCrawler:
                                                 user_id=user_id)
                 if user_info:
                     page_users[user_id] = user_info
-                    page_users[user_id]['idZealy'] = user_info['id']
+                    page_users[user_id]['idZealy'] = page_users[user_id].pop('id')
 
             logger.info(f'Community {community_info["name"]}: '
-                        f'scraped to page {page_number} / {n_pages} pages, '
-                        f'total {n_users} users')
+                        f'scraped to page {page_number} / {n_pages} pages')
+                        # f'total {n_users} users')
 
             # if community has no users with blockchain address, move on to next community
             if len(page_users) == 0 or page_number > LIMIT_NUMBER_OF_PAGES:
                 break
             # update to database
-            self.database.update_users(page_users)
+            _mongo_dicts = [{
+                '_id': k,
+                **v
+            } for k, v in page_users.items()]
+            self.database.update_users(data=_mongo_dicts)
             page_number += 1
 
     def _get_user_info(self, community_subdomain: str, user_id: str,
