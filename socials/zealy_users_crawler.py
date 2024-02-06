@@ -17,9 +17,9 @@ logger.addHandler(get_file_handler())
 BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
 
-LIMIT_NUMBER_OF_PAGES = 10
 COMMUNITY_THRESHOLD = 100  # only get communities with over 100 users
-USER_THRESHOLD = 5e-2  # only get top 5% percent users of communities
+USER_THRESHOLD = 5e-2  # only get top 5% percent users of each community
+USER_LIMIT = 1000  # only get maximum 5k users from each community
 
 headers = {
     'Origin': 'https://zealy.io',
@@ -35,6 +35,9 @@ class ZealyUserCrawler:
         self.batch_size = batch_size
         self.communities_file = communities_file
         self.database = database
+
+        self._total_users: int = 0
+        self._progress_users: int = 0
 
     @staticmethod
     def _get_communities(page=1, count=30) -> requests.api.request:
@@ -108,15 +111,20 @@ class ZealyUserCrawler:
             communities = [q for q in communities if q['totalMembers'] >= COMMUNITY_THRESHOLD]
 
         n_communities = len(communities)
+        self._total_users = sum([c['totalMembers'] for c in communities])
 
         logger.info("###############################")
         logger.info(f'There are {n_communities} communities')
         logger.info("###############################\n")
 
         for _i, community in enumerate(communities[start_community_idx:]):
-            logger.info(f'Get users of community {_i + start_community_idx} / {n_communities}: {community["name"]}')
+            logger.info(f'Get users of community {_i + start_community_idx} / {n_communities}: '
+                        f'{community["name"]} ({community["totalMembers"]} members)')
             try:
                 self._get_community_users(community_info=community)
+                self._progress_users = sum([c['totalMembers'] for c in communities[:_i]])
+                logger.info(f'Successfully get users of community {community["name"]}. '
+                            f'Progress: {(self._progress_users / self._total_users * 100):.2f}%')
             except Exception as ex:
                 logger.exception(f"Can't get users of community {community['name']}: {ex}")
 
@@ -146,7 +154,8 @@ class ZealyUserCrawler:
             # if community has no users with blockchain address, move on to next community
             if (page_number > n_pages
                     or len(page_users) == 0
-                    or len(page_users) > (n_users * USER_THRESHOLD)):
+                    or len(page_users) > (n_users * USER_THRESHOLD)
+                    or len(page_users) > USER_LIMIT):
                 break
 
             # update to database
