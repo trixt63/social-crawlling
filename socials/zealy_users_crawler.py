@@ -18,7 +18,7 @@ BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
 
 LIMIT_NUMBER_OF_PAGES = 10
-COMMUNITY_THRESHOLD = 100 # only get communities with over 100 users
+COMMUNITY_THRESHOLD = 100  # only get communities with over 100 users
 USER_THRESHOLD = 5e-2  # only get top 5% percent users of communities
 
 headers = {

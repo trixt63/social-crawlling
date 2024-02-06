@@ -1,6 +1,6 @@
 import click
 
-from socials.crew3_users_crawler import ZealyUserCrawler
+from socials.zealy_users_crawler import ZealyUserCrawler
 from databases.social_users_db import SocialUsersDB
 from utils.logger_utils import get_logger
 
