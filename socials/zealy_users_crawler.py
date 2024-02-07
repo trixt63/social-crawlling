@@ -131,6 +131,7 @@ class ZealyUserCrawler:
     @retry_handler(retries_number=3)
     def _get_community_users(self, community_info: dict):
         page_number = 1
+        total_n_users = 0
         while True:
             page_users: dict[str, dict] = dict()  # {user_id: user_info}
 
@@ -148,14 +149,15 @@ class ZealyUserCrawler:
                     page_users[user_id]['idZealy'] = page_users[user_id].pop('id')
 
             logger.info(f'Community {community_info["name"]}: '
-                        f'scraped to page {page_number} / {n_pages} pages')
-                        # f'total {n_users} users')
+                        f'scraped to page {page_number} / {n_pages} pages. '
+                        f'total {total_n_users} users')
 
+            total_n_users += len(page_users)
             # if community has no users with blockchain address, move on to next community
             if (page_number > n_pages
                     or len(page_users) == 0
                     or len(page_users) > (n_users * USER_THRESHOLD)
-                    or len(page_users) > USER_LIMIT):
+                    or total_n_users > USER_LIMIT):
                 break
 
             # update to database
