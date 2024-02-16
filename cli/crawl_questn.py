@@ -1,3 +1,4 @@
+import os
 import click
 
 from socials.questn_users_crawler import QuestNUserCrawler
@@ -14,16 +15,18 @@ logger = get_logger('Crawl QuestN')
               help='Quests file path')
 @click.option('-s', '--start-idx', default=0, show_default=True, type=int,
               help='Start index in quests file')
-# @click.option('-b', '--batch-size', default=50, show_default=True, type=int,
-#               help='Batch size for crawling new quests')
-# @click.option('--min-sub', default=0, show_default=True, type=int,
-#               help='Minimal submissions for quest')
-# @click.option('--max-sub', default=0, show_default=True, type=int,
-#               help='Max submissions for quest')
-def crawl_questn(refresh, file, start_idx):
+@click.option('--min-sub', default=10, show_default=True, type=int,
+              help='Minimal submissions for quest')
+@click.option('--max-sub', default=None, show_default=True, type=int,
+              help='Max submissions for quest')
+def crawl_questn(refresh, file, start_idx, min_sub, max_sub):
     db = SocialUsersDB()
     crawler = QuestNUserCrawler(quests_file=file)
 
     if refresh:
-        crawler.get_quests(quest_batch_size=100)
-    crawler.get_users(start_idx=start_idx, exporter=db)
+        if os.path.isfile(file):
+            os.remove(file)
+        else:
+            raise FileNotFoundError(f"Not found QuestN quests file at {file}")
+
+    crawler.get_users(start_idx=start_idx, exporter=db, min_submissions=min_sub, max_submissions=max_sub)

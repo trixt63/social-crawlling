@@ -18,8 +18,13 @@ class QuestNUserCrawler:
     def __init__(self, quests_file: str = 'data/questn_quests.json'):
         self.quest_file = quests_file
 
+        self.current_quest_index = 0
+        self.quests: list = []
+
     @staticmethod
     def _get_quests(page=1, count=21):
+        """Call API to get all trending quests on QuestN
+        """
         query = {
             'count': count,
             'page': page,
@@ -40,6 +45,8 @@ class QuestNUserCrawler:
 
     @staticmethod
     def _get_questers(quest_id, page=1, count=1000):
+        """Call API to get list of questers of a quest on QuestN (pagination)
+        """
         query = {
             'quest_id': quest_id,
             'page': page,
@@ -53,51 +60,57 @@ class QuestNUserCrawler:
         return response
 
     def get_quests(self, quest_batch_size=100):
-        number_of_pages = 1
-        page = 0
-        data = []
-        while page < number_of_pages:
-            page += 1
-            try:
-                quests_resp = self._get_quests(page=page, count=quest_batch_size)
-                if 200 <= quests_resp.status_code < 300:
-                    quests_response = quests_resp.json()
-                    result = quests_response['result']
+        try:
+            with open(self.quest_file, 'r') as f:
+                self.quests = json.load(f)
+        except FileNotFoundError:
+            number_of_pages = 1
+            page = 0
+            _quests = []
+            while page < number_of_pages:
+                page += 1
+                try:
+                    quests_resp = self._get_quests(page=page, count=quest_batch_size)
+                    if 200 <= quests_resp.status_code < 300:
+                        quests_response = quests_resp.json()
+                        result = quests_response['result']
 
-                    number_of_pages = result['num_pages']
+                        number_of_pages = result['num_pages']
 
-                    quests = result['data']
-                    data.extend([{'id': q['id'], 'title': q['title'], 'submissions': q.get('submissions') or 0} for q in quests])
-                    logger.info(f'Loaded {len(data)} quests after page [{page}] / {number_of_pages}')
-                else:
-                    raise requests.exceptions.RequestException(f'Fail ({quests_resp.status_code}) to load quests of page [{page}]')
-            except Exception as ex:
-                logger.exception(ex)
-            finally:
-                time.sleep(0.1)
-                
-        data = sorted(data, key=lambda x: x['submissions'], reverse=True)
+                        _quests = result['data']
+                        _quests.extend([{'id': q['id'], 'title': q['title'], 'submissions': q.get('submissions') or 0} for q in _quests])
+                        logger.info(f'Loaded {len(_quests)} quests after page [{page}] / {number_of_pages}')
+                    else:
+                        raise requests.exceptions.RequestException(f'Fail ({quests_resp.status_code}) to load quests of page [{page}]')
+                except Exception as ex:
+                    logger.exception(ex)
+                finally:
+                    time.sleep(0.1)
 
-        with open(self.quest_file, 'w') as f:
-            json.dump(data, f, indent=2)
-        logger.info(f'Saved {len(data)} quests')
+            self.quests = sorted(_quests, key=lambda x: x['submissions'], reverse=True)
+            with open(self.quest_file, 'w') as f:
+                json.dump(self.quests, f, indent=2)
+
+        logger.info(f'Get {len(self.quests)} quests')
 
     def get_users(self,
-                  start_idx=0,
+                  start_idx=None,
                   user_batch_size=1000,
                   min_submissions=10,
                   max_submissions=None,
                   exporter: SocialUsersDB = None):
-        with open(self.quest_file, 'r') as f:
-            data = json.load(f)
-            data = [q for q in data if self.check_submission(q['submissions'], min_submissions, max_submissions)]
+        self.get_quests()
+        self.filter_quests(min_submissions=min_submissions, max_submissions=max_submissions)
 
         logger.info("###############################")
-        logger.info(f'There are {len(data)} quests')
+        logger.info(f'There are {len(self.quests)} quests')
         logger.info("###############################\n")
 
-        for idx, quest in enumerate(data[start_idx:]):
-            logger.info(f'Get questers of quest {idx + start_idx} / {len(data)}: '
+        if start_idx is None:
+            start_idx = self.current_quest_index
+
+        for idx, quest in enumerate(self.quests[start_idx:]):
+            logger.info(f'Get questers of quest {idx + start_idx} / {len(self.quests)}: '
                         f'{quest["title"]}: ({quest["submissions"]} submissions)...')
             quest_id = quest['id']
 
@@ -131,10 +144,12 @@ class QuestNUserCrawler:
             if page_questers and (exporter is not None):
                 self.export_users(exporter, page_questers)
 
-            logger.info(f'End {quest["title"]} with {len(data)} users \n')
+            self.current_quest_index = idx + start_idx
 
     @staticmethod
-    def format_quester(quester):
+    def format_quester(quester: dict):
+        """Get info about a quester, filter out questers without crypto wallets
+        """
         address = quester.get('user_address')
         if not address:
             return None
@@ -153,11 +168,16 @@ class QuestNUserCrawler:
             'twitter': twitter_username
         }
 
+    def filter_quests(self, min_submissions, max_submissions):
+        """Filter out quests with too few submissions (or users)"""
+        self.quests = [q for q in self.quests
+                       if self._check_submission(q['submissions'], min_submissions, max_submissions)]
+
     @staticmethod
-    def check_submission(n, min_submissions=0, max_submissions=None):
-        if n < min_submissions:
+    def _check_submission(submissions, min_submissions=0, max_submissions=None):
+        if submissions < min_submissions:
             return False
-        if (max_submissions is not None) and (n > max_submissions):
+        if (max_submissions is not None) and (submissions > max_submissions):
             return False
         return True
 
