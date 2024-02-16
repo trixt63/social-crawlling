@@ -1,9 +1,9 @@
-import os
 import click
 
 from socials.questn_users_crawler import QuestNUserCrawler
 from databases.social_users_db import SocialUsersDB
 from utils.logger_utils import get_logger
+from utils.file_utils import delete_file
 
 logger = get_logger('Crawl QuestN')
 
@@ -24,9 +24,6 @@ def crawl_questn(refresh, file, start_idx, min_sub, max_sub):
     crawler = QuestNUserCrawler(quests_file=file)
 
     if refresh:
-        if os.path.isfile(file):
-            os.remove(file)
-        else:
-            raise FileNotFoundError(f"Not found QuestN quests file at {file}")
+        delete_file(filename=file)
 
     crawler.get_users(start_idx=start_idx, exporter=db, min_submissions=min_sub, max_submissions=max_sub)

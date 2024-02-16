@@ -14,4 +14,3 @@ class CrawlQuestNJob(SchedulerJob):
 
     def _execute(self):
         self._scraper.get_quests()
-
