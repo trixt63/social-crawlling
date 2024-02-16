@@ -22,7 +22,7 @@ class QuestNUserCrawler:
         self.quests: list = []
 
     @staticmethod
-    def _get_quests(page=1, count=21):
+    def _get_quests(page: int=1, count=21):
         """Call API to get all trending quests on QuestN
         """
         query = {
@@ -66,7 +66,6 @@ class QuestNUserCrawler:
         except FileNotFoundError:
             number_of_pages = 1
             page = 0
-            _quests = []
             while page < number_of_pages:
                 page += 1
                 try:
@@ -77,9 +76,10 @@ class QuestNUserCrawler:
 
                         number_of_pages = result['num_pages']
 
-                        _quests = result['data']
-                        _quests.extend([{'id': q['id'], 'title': q['title'], 'submissions': q.get('submissions') or 0} for q in _quests])
-                        logger.info(f'Loaded {len(_quests)} quests after page [{page}] / {number_of_pages}')
+                        _page_quests = result['data']
+                        self.quests.extend([{'id': q['id'], 'title': q['title'], 'submissions': q.get('submissions', 0)}
+                                            for q in _page_quests])
+                        logger.info(f'Loaded {len(self.quests)} quests after page [{page}] / {number_of_pages}')
                     else:
                         raise requests.exceptions.RequestException(f'Fail ({quests_resp.status_code}) to load quests of page [{page}]')
                 except Exception as ex:
@@ -87,7 +87,7 @@ class QuestNUserCrawler:
                 finally:
                     time.sleep(0.1)
 
-            self.quests = sorted(_quests, key=lambda x: x['submissions'], reverse=True)
+            self.quests = sorted(self.quests, key=lambda x: x['submissions'], reverse=True)
             with open(self.quest_file, 'w') as f:
                 json.dump(self.quests, f, indent=2)
 
