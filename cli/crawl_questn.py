@@ -9,7 +9,7 @@ logger = get_logger('Crawl QuestN')
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option( '-r', '--refresh', is_flag=True,
-               help='Refresh quests file')
+               help='Refresh (Get new) quests file')
 @click.option('-f', '--file', type=str, default='data/questn_quests.json', show_default=True,
               help='Quests file path')
 @click.option('-s', '--start-idx', default=0, show_default=True, type=int,
