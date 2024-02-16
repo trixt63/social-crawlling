@@ -91,7 +91,8 @@ class QuestNUserCrawler:
             with open(self.quest_file, 'w') as f:
                 json.dump(self.quests, f, indent=2)
 
-        logger.info(f'Get {len(self.quests)} quests')
+        n_users = sum([q['submissions'] for q in self.quests])
+        logger.info(f'Get {len(self.quests)} quests, {n_users} users')
 
     def get_users(self,
                   start_idx=None,
