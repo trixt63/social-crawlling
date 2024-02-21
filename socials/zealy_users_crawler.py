@@ -116,7 +116,7 @@ class ZealyUserCrawler:
         self._total_users = sum([c['totalMembers'] for c in communities])
 
         logger.info("###############################")
-        logger.info(f'There are {n_communities} communities')
+        logger.info(f'There are {n_communities} communities with over {COMMUNITY_THRESHOLD} members')
         logger.info("###############################\n")
 
         for _i, community in enumerate(communities[start_community_idx:]):
@@ -150,11 +150,11 @@ class ZealyUserCrawler:
                     page_users[user_id] = user_info
                     page_users[user_id]['idZealy'] = page_users[user_id].pop('id')
 
+            total_n_users += len(page_users)
             logger.info(f'Community {community_info["name"]}: '
                         f'scraped to page {page_number} / {n_pages} pages. '
                         f'total {total_n_users} users')
 
-            total_n_users += len(page_users)
             # if community has no users with blockchain address, move on to next community
             if (page_number > n_pages
                     or len(page_users) == 0
