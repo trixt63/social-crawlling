@@ -21,7 +21,7 @@ COMMUNITY_THRESHOLD = 1000  # only get communities with over 1000 users
 USER_THRESHOLD = 5e-2  # only get top 5% percent users of each community
 USER_LIMIT = 1000  # only get maximum 1k users from each community
 PAGE_SLEEP = 0.1
-REQUEST_SLEEP = 1e-5
+REQUEST_SLEEP = 1e-3
 
 headers = {
     'Origin': 'https://zealy.io',
