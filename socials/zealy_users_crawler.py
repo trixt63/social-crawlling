@@ -17,9 +17,11 @@ logger.addHandler(get_file_handler())
 BASE_URL = 'https://api.zealy.io/communities'
 BASE_URL_2 = 'https://backend.zealy.io/api/communities'
 
-COMMUNITY_THRESHOLD = 100  # only get communities with over 100 users
+COMMUNITY_THRESHOLD = 1000  # only get communities with over 1000 users
 USER_THRESHOLD = 5e-2  # only get top 5% percent users of each community
-USER_LIMIT = 1000  # only get maximum 5k users from each community
+USER_LIMIT = 1000  # only get maximum 1k users from each community
+PAGE_SLEEP = 0.1
+REQUEST_SLEEP = 1e-4
 
 headers = {
     'Origin': 'https://zealy.io',
@@ -93,7 +95,7 @@ class ZealyUserCrawler:
                 logger.exception(ex)
             finally:
                 page += 1
-                time.sleep(1)
+                time.sleep(PAGE_SLEEP)
 
         data = sorted(data, key=lambda x: x['totalMembers'], reverse=True)
 
@@ -169,16 +171,18 @@ class ZealyUserCrawler:
             page_number += 1
 
     def _get_user_info(self, community_subdomain: str, user_id: str,
-                       sleep_time: float = 1e-4) -> dict:
-        user_info = dict()
+                       sleep_time: float = REQUEST_SLEEP) -> dict:
+        user_info: dict | None = None
 
+        status_code: int = 0
         try:
             user_resp = self._get_user(subdomain=community_subdomain,
                                        user_id=user_id)
-            assert 200 <= user_resp.status_code < 300
+            status_code = user_resp.status_code
+            assert 200 <= status_code < 300
             user_info = self._format_quester(user_resp.json())
-        except AssertionError as a:
-            logger.exception(f'Failed to load user id {user_id}: {a}')
+        except AssertionError:
+            logger.exception(f'Failed to load user id {user_id}: Code {status_code}')
         except KeyError as k:
             logger.exception(f'Failed to get info of user id {user_id}: {k}')
         except Exception as ex:
