@@ -10,5 +10,5 @@ python3 main.py crawl_zealy -b 100
 
 ## 2. Crawl QuestN
 ```shell
-python3 main.py crawl_questn
+python3 main.py crawl_questn -f data/questn_quets.json
 ```
